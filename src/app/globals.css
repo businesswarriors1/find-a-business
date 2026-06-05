@@ -1,26 +1,30 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-primary: #0D6EFD;
+  --color-primary-dark: #0B5ED7;
+  --color-cta: #F97316;
+  --color-cta-dark: #EA580C;
+  --color-success: #16A34A;
+  --color-dark: #111827;
+  --color-mid: #6B7280;
+  --color-light-bg: #F3F4F6;
+  --color-border: #E5E7EB;
+  --font-heading: "DM Sans", sans-serif;
+  --font-body: "Inter", sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--color-dark);
+  background: #ffffff;
+  font-family: var(--font-body);
+}
+
+/* Card hover utility */
+.card-hover {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.card-hover:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
 }
