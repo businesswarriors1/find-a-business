@@ -1,8 +1,6 @@
-import Link from "next/link";
 import {
   MessageCircle,
   Search,
-  Clock,
   CheckCircle,
   Users,
   ChevronDown,
@@ -11,6 +9,7 @@ import {
   Heart,
 } from "lucide-react";
 import { SITE_NAME, GET_LISTED_FAQS } from "@/lib/constants";
+import { GetListedChat } from "@/components/get-listed-chat";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -78,27 +77,22 @@ export default function GetListedPage() {
         </div>
       </section>
 
-      {/* Chat widget CTA */}
-      <section className="bg-primary py-16">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-6">
-            <MessageCircle className="w-10 h-10 text-white" />
+      {/* Chat widget */}
+      <section id="chat" className="bg-primary py-16 scroll-mt-20">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-5">
+              <MessageCircle className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold font-heading text-white mb-3">
+              Chat with Us to Get Listed
+            </h2>
+            <p className="text-white/80 max-w-xl mx-auto">
+              Our friendly assistant will guide you through it in a couple of
+              minutes. Tell us about your business and we&apos;ll handle the rest.
+            </p>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold font-heading text-white mb-3">
-            Chat with Us to Get Listed
-          </h2>
-          <p className="text-white/80 mb-8 max-w-xl mx-auto">
-            Our friendly AI assistant will guide you through the process in just
-            a couple of minutes. Tell us about your business and we will handle
-            the rest.
-          </p>
-          <Link
-            href="/get-listed#chat"
-            className="inline-flex items-center gap-2 bg-cta text-white font-semibold rounded-lg px-8 py-4 hover:bg-cta-dark transition-colors text-lg"
-          >
-            <MessageCircle className="w-5 h-5" />
-            Start Chat — Get Listed Free
-          </Link>
+          <GetListedChat />
         </div>
       </section>
 

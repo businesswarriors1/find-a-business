@@ -2,8 +2,9 @@ import Link from "next/link";
 import { ChevronRight, MapPin, Search } from "lucide-react";
 import { ListingCard } from "@/components/listing-card";
 import { SearchBar } from "@/components/search-bar";
-import { STATES, PRIMARY_CATEGORIES, SITE_NAME } from "@/lib/constants";
+import { STATES, PRIMARY_CATEGORIES, SITE_NAME, SITE_URL } from "@/lib/constants";
 import { getBusinesses, getRecentBusinesses } from "@/lib/supabase/server";
+import { jsonLd } from "@/lib/utils";
 import type { Metadata } from "next";
 
 interface Props {
@@ -17,6 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `Find Businesses in ${name} | ${SITE_NAME}`,
     description: `Discover local businesses across ${name}. Search by category, suburb, or keyword — free Australian business directory.`,
+    alternates: { canonical: `${SITE_URL}/state/${slug}` },
   };
 }
 
@@ -158,22 +160,12 @@ export default async function StatePage({ params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: jsonLd({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             itemListElement: [
-              {
-                "@type": "ListItem",
-                position: 1,
-                name: "Home",
-                item: "https://findabusiness.com.au",
-              },
-              {
-                "@type": "ListItem",
-                position: 2,
-                name: stateName,
-                item: `https://findabusiness.com.au/state/${slug}`,
-              },
+              { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+              { "@type": "ListItem", position: 2, name: stateName, item: `${SITE_URL}/state/${slug}` },
             ],
           }),
         }}

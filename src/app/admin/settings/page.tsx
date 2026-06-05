@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getBrowserSupabase } from "@/lib/supabase-browser";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import {
   Loader2,
@@ -37,7 +37,7 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     async function check() {
-      const supabase = getBrowserSupabase();
+      const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         router.replace("/admin/login");

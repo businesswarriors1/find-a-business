@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getBrowserSupabase } from "@/lib/supabase-browser";
+import { createClient } from "@/lib/supabase/client";
 import { Suburb } from "@/types";
 import { cn } from "@/lib/utils";
 import {
@@ -32,7 +32,7 @@ export default function AdminSuburbsPage() {
   const [showAdd, setShowAdd] = useState(false);
 
   const fetchSuburbs = async () => {
-    const supabase = getBrowserSupabase();
+    const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       router.replace("/admin/login");
@@ -144,7 +144,7 @@ export default function AdminSuburbsPage() {
                 <button
                   onClick={async () => {
                     if (confirm(`Remove "${suburb.name}"?`)) {
-                      const supabase = getBrowserSupabase();
+                      const supabase = createClient();
                       await supabase.from("suburbs").delete().eq("id", suburb.id);
                       fetchSuburbs();
                     }
@@ -179,7 +179,7 @@ function AddSuburbForm({
   async function handleAdd() {
     if (!name.trim()) return;
     setSaving(true);
-    const supabase = getBrowserSupabase();
+    const supabase = createClient();
     await supabase.from("suburbs").insert({
       name: name.trim(),
       state,

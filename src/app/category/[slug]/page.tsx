@@ -4,8 +4,9 @@ import { SearchBar } from "@/components/search-bar";
 import { ListingCard } from "@/components/listing-card";
 import { Pagination } from "@/components/pagination";
 import { SortSelect } from "@/components/sort-select";
-import { PRIMARY_CATEGORIES, ITEMS_PER_PAGE, SITE_NAME } from "@/lib/constants";
+import { PRIMARY_CATEGORIES, ITEMS_PER_PAGE, SITE_NAME, SITE_URL } from "@/lib/constants";
 import { getCategoryBySlug, getSubcategories, getBusinesses } from "@/lib/supabase/server";
+import { jsonLd } from "@/lib/utils";
 import type { Metadata } from "next";
 
 interface Props {
@@ -20,6 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${name} in Australia | ${SITE_NAME}`,
     description: `Find ${name.toLowerCase()} across Australia. Browse verified ${name.toLowerCase()}, compare reviews, and contact local businesses — all for free.`,
+    alternates: { canonical: `${SITE_URL}/category/${slug}` },
   };
 }
 
@@ -179,11 +181,11 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         </div>
       </div>
 
-      {/* JSON-LD */}
+      {/* JSON-LD: ItemList */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: jsonLd({
             "@context": "https://schema.org",
             "@type": "ItemList",
             itemListElement: businesses.map((b, idx) => ({
@@ -200,6 +202,21 @@ export default async function CategoryPage({ params, searchParams }: Props) {
                 },
               },
             })),
+          }),
+        }}
+      />
+
+      {/* JSON-LD: BreadcrumbList */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLd({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+              { "@type": "ListItem", position: 2, name: categoryName, item: `${SITE_URL}/category/${slug}` },
+            ],
           }),
         }}
       />

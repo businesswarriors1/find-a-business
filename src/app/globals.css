@@ -1,30 +1,95 @@
 @import "tailwindcss";
 
+/* ============================================================
+   findabusiness.com.au — "The Trusted Local" design system
+   Warm, editorial, distinctly Australian. Ink-eucalyptus + sand
+   + terracotta + wattle gold. Fraunces display / Hanken Grotesk UI.
+   ============================================================ */
+
 @theme inline {
-  --color-primary: #0D6EFD;
-  --color-primary-dark: #0B5ED7;
-  --color-cta: #F97316;
-  --color-cta-dark: #EA580C;
-  --color-success: #16A34A;
-  --color-dark: #111827;
-  --color-mid: #6B7280;
-  --color-light-bg: #F3F4F6;
-  --color-border: #E5E7EB;
-  --font-heading: "DM Sans", sans-serif;
-  --font-body: "Inter", sans-serif;
+  /* Brand */
+  --color-primary: #0c2b2a;        /* midnight eucalyptus — brand / dark surfaces */
+  --color-primary-dark: #08201f;
+  --color-ink: #0c2b2a;
+  --color-cta: #e4572e;            /* terracotta sunset — conversion accent */
+  --color-cta-dark: #c8451f;
+  --color-gold: #f2b705;           /* wattle gold — ratings / highlights */
+  --color-success: #3f7d5a;        /* eucalyptus green — verified */
+
+  /* Neutrals (warm) */
+  --color-dark: #12211f;           /* ink text */
+  --color-mid: #5c6b66;            /* secondary text */
+  --color-light-bg: #f3ecdf;       /* warm sand — section / card wash */
+  --color-paper: #fbf8f2;          /* page background */
+  --color-border: #e7e0d4;         /* warm taupe border */
+
+  /* Type */
+  --font-heading: var(--font-fraunces), Georgia, serif;
+  --font-body: var(--font-hanken), system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   color: var(--color-dark);
-  background: #ffffff;
+  background-color: #fbf8f2;
   font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Card hover utility */
+/* Display headings get the Fraunces optical "soft" feel */
+.font-heading {
+  font-family: var(--font-heading);
+  font-optical-sizing: auto;
+  letter-spacing: -0.01em;
+}
+
+/* ---- Dark hero surface: ink base + wattle glow + fine grain ---- */
+.surface-ink {
+  background-color: #0c2b2a;
+  background-image:
+    radial-gradient(60% 80% at 85% -10%, rgba(242, 183, 5, 0.16), transparent 60%),
+    radial-gradient(50% 60% at 5% 110%, rgba(228, 87, 46, 0.16), transparent 60%);
+  position: relative;
+}
+.surface-ink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+}
+
+/* ---- Card hover ---- */
 .card-hover {
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
 }
 .card-hover:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -12px rgba(12, 43, 42, 0.22);
+  transform: translateY(-3px);
+  border-color: #d6cdb9;
+}
+
+/* ---- Decorative ticker / underline accents ---- */
+.rule-accent {
+  background: linear-gradient(90deg, var(--color-cta), var(--color-gold));
+}
+
+/* Selection */
+::selection {
+  background: rgba(228, 87, 46, 0.2);
+  color: var(--color-dark);
+}
+
+/* Entrance animation for hero */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-rise {
+  animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getBrowserSupabase } from "@/lib/supabase-browser";
+import { createClient } from "@/lib/supabase/client";
 import { Category } from "@/types";
 import { cn } from "@/lib/utils";
 import {
@@ -24,7 +24,7 @@ export default function AdminCategoriesPage() {
   const [editing, setEditing] = useState<string | null>(null);
 
   const fetchCategories = async () => {
-    const supabase = getBrowserSupabase();
+    const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       router.replace("/admin/login");
@@ -113,7 +113,7 @@ export default function AdminCategoriesPage() {
                     <InlineEdit
                       initialValue={parent.name}
                       onSave={async (name: string) => {
-                        const supabase = getBrowserSupabase();
+                        const supabase = createClient();
                         await supabase.from("categories").update({ name }).eq("id", parent.id);
                         setEditing(null);
                         fetchCategories();
@@ -140,7 +140,7 @@ export default function AdminCategoriesPage() {
                   <button
                     onClick={async () => {
                       if (confirm(`Delete "${parent.name}" and its subcategories?`)) {
-                        const supabase = getBrowserSupabase();
+                        const supabase = createClient();
                         await supabase.from("categories").delete().eq("id", parent.id);
                         await supabase.from("categories").delete().eq("parent_id", parent.id);
                         fetchCategories();
@@ -166,7 +166,7 @@ export default function AdminCategoriesPage() {
                         <InlineEdit
                           initialValue={sub.name}
                           onSave={async (name: string) => {
-                            const supabase = getBrowserSupabase();
+                            const supabase = createClient();
                             await supabase.from("categories").update({ name }).eq("id", sub.id);
                             setEditing(null);
                             fetchCategories();
@@ -191,7 +191,7 @@ export default function AdminCategoriesPage() {
                       </button>
                       <button
                         onClick={async () => {
-                          const supabase = getBrowserSupabase();
+                          const supabase = createClient();
                           await supabase.from("categories").delete().eq("id", sub.id);
                           fetchCategories();
                         }}
@@ -242,7 +242,7 @@ function AddCategoryForm({
   async function handleAddParent() {
     if (!name.trim()) return;
     setSaving(true);
-    const supabase = getBrowserSupabase();
+    const supabase = createClient();
     await supabase.from("categories").insert({
       name: name.trim(),
       slug: slug || generateSlugForName(name),
@@ -255,7 +255,7 @@ function AddCategoryForm({
   async function handleAddSub() {
     if (!subcategoryName.trim() || !parentId) return;
     setSaving(true);
-    const supabase = getBrowserSupabase();
+    const supabase = createClient();
     const parent = parents.find((p) => p.id === parentId);
     await supabase.from("categories").insert({
       name: subcategoryName.trim(),
@@ -350,7 +350,7 @@ function AddSubcategoryForm({
   async function handleAdd() {
     if (!name.trim()) return;
     setSaving(true);
-    const supabase = getBrowserSupabase();
+    const supabase = createClient();
     await supabase.from("categories").insert({
       name: name.trim(),
       slug: `${slugPrefix}-${generateSlugForName(name)}`,

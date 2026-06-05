@@ -89,8 +89,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-3 border-t border-gray-700">
           <button
             onClick={async () => {
-              const { getBrowserSupabase } = await import("@/lib/supabase-browser");
-              const supabase = getBrowserSupabase();
+              const { createClient } = await import("@/lib/supabase/client");
+              const supabase = createClient();
               await supabase.auth.signOut();
               window.location.href = "/admin/login";
             }}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { getBrowserSupabase } from "@/lib/supabase-browser";
+import { createClient } from "@/lib/supabase/client";
 import { Business } from "@/types";
 import { cn } from "@/lib/utils";
 import {
@@ -26,7 +26,7 @@ export default function AdminBusinessesPage() {
   const [editModal, setEditModal] = useState<{ open: boolean; business: Business | null }>({ open: false, business: null });
 
   const fetchBusinesses = useCallback(async () => {
-    const supabase = getBrowserSupabase();
+    const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       router.replace("/admin/login");
@@ -55,7 +55,7 @@ export default function AdminBusinessesPage() {
   useEffect(() => { fetchBusinesses(); }, [fetchBusinesses]);
 
   async function toggleStatus(business: Business) {
-    const supabase = getBrowserSupabase();
+    const supabase = createClient();
     const newStatus = business.status === "active" ? "suspended" : "active";
     await supabase
       .from("businesses")
@@ -251,7 +251,7 @@ function EditBusinessModal({
 
   async function handleSave() {
     setSaving(true);
-    const supabase = getBrowserSupabase();
+    const supabase = createClient();
     await supabase
       .from("businesses")
       .update(form)

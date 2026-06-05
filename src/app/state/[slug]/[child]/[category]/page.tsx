@@ -2,8 +2,9 @@ import Link from "next/link";
 import { ChevronRight, MapPin, Search } from "lucide-react";
 import { ListingCard } from "@/components/listing-card";
 import { Pagination } from "@/components/pagination";
-import { STATES, PRIMARY_CATEGORIES, ITEMS_PER_PAGE, SITE_NAME } from "@/lib/constants";
-import { getBusinesses } from "@/lib/supabase/server";
+import { STATES, PRIMARY_CATEGORIES, ITEMS_PER_PAGE, SITE_NAME, SITE_URL } from "@/lib/constants";
+import { getBusinesses, getNearbySuburbs, getCategoriesInSuburb } from "@/lib/supabase/server";
+import { jsonLd } from "@/lib/utils";
 import type { Metadata } from "next";
 
 interface Props {
@@ -22,6 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${catName} in ${suburbName}, ${state} | ${SITE_NAME}`,
     description: `Looking for ${catName.toLowerCase()} in ${suburbName}, ${state}? Browse ${catName.toLowerCase()} near you — contact details, reviews, and more.`,
+    alternates: { canonical: `${SITE_URL}/state/${slug}/${child}/${category}` },
   };
 }
 
@@ -46,6 +48,12 @@ export default async function MoneyPage({ params, searchParams }: Props) {
     sort: sort ?? "name",
   });
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
+
+  const [nearbySuburbs, relatedCategories] = await Promise.all([
+    getNearbySuburbs(stateAbbr, child, 6),
+    getCategoriesInSuburb(suburbName, stateAbbr),
+  ]);
+  const otherCategories = relatedCategories.filter((c: any) => c.slug !== category).slice(0, 6);
 
   return (
     <div>
@@ -108,17 +116,45 @@ export default async function MoneyPage({ params, searchParams }: Props) {
         )}
 
         {/* Nearby suburbs + related categories */}
-        {(businesses.length === 0 || businesses.length > 0) && (
+        {(nearbySuburbs.length > 0 || otherCategories.length > 0) && (
           <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-light-bg rounded-lg p-5 border border-border">
-              <h3 className="font-semibold text-dark mb-2 font-heading">
-                <MapPin className="w-4 h-4 inline mr-1" /> Nearby Suburbs
+              <h3 className="font-semibold text-dark mb-3 font-heading">
+                <MapPin className="w-4 h-4 inline mr-1" /> {catName} Nearby
               </h3>
-              <p className="text-sm text-mid">Also find {catName.toLowerCase()} in nearby suburbs.</p>
+              {nearbySuburbs.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {nearbySuburbs.map((sub: any) => (
+                    <Link
+                      key={sub.id}
+                      href={`/state/${slug}/${sub.slug}/${category}`}
+                      className="inline-flex items-center rounded-full border border-border bg-white px-3 py-1.5 text-sm font-medium text-dark hover:border-primary hover:text-primary transition-colors"
+                    >
+                      {sub.name}
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-mid">No nearby suburbs listed yet.</p>
+              )}
             </div>
             <div className="bg-light-bg rounded-lg p-5 border border-border">
-              <h3 className="font-semibold text-dark mb-2 font-heading">Related in {suburbName}</h3>
-              <p className="text-sm text-mid">Browse other categories with businesses in {suburbName}.</p>
+              <h3 className="font-semibold text-dark mb-3 font-heading">Other Categories in {suburbName}</h3>
+              {otherCategories.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {otherCategories.map((cat: any) => (
+                    <Link
+                      key={cat.slug}
+                      href={`/state/${slug}/${child}/${cat.slug}`}
+                      className="inline-flex items-center rounded-full border border-border bg-white px-3 py-1.5 text-sm font-medium text-dark hover:border-primary hover:text-primary transition-colors"
+                    >
+                      {cat.name}
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-mid">No other categories listed here yet.</p>
+              )}
             </div>
           </div>
         )}
@@ -133,8 +169,8 @@ export default async function MoneyPage({ params, searchParams }: Props) {
         </div>
       </div>
 
-      {/* JSON-LD */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      {/* JSON-LD: ItemList */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({
         "@context": "https://schema.org",
         "@type": "ItemList",
         itemListElement: businesses.map((b: any, idx: number) => ({
@@ -151,7 +187,19 @@ export default async function MoneyPage({ params, searchParams }: Props) {
             },
           },
         })),
-      })}} />
+      }) }} />
+
+      {/* JSON-LD: BreadcrumbList */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+          { "@type": "ListItem", position: 2, name: stateName, item: `${SITE_URL}/state/${slug}` },
+          { "@type": "ListItem", position: 3, name: suburbName, item: `${SITE_URL}/state/${slug}/${child}` },
+          { "@type": "ListItem", position: 4, name: catName, item: `${SITE_URL}/state/${slug}/${child}/${category}` },
+        ],
+      }) }} />
     </div>
   );
 }

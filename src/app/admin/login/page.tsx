@@ -17,8 +17,8 @@ export default function AdminLoginPage() {
     setError("");
     setLoading(true);
     try {
-      const { getBrowserSupabase } = await import("@/lib/supabase-browser");
-      const supabase = getBrowserSupabase();
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) { setError(signInError.message); setLoading(false); return; }
       router.push("/admin");

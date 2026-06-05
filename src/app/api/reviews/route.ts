@@ -51,6 +51,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { business_id, reviewer_name, reviewer_email, rating, content } = body;
 
+    // Honeypot — bots fill this; respond 200 but silently discard.
+    if (body.honeypot_field) {
+      return NextResponse.json({ message: "Review submitted for moderation. Thank you!" });
+    }
+
     if (!business_id) {
       return NextResponse.json({ error: "business_id is required" }, { status: 400 });
     }
@@ -73,6 +78,7 @@ export async function POST(request: NextRequest) {
       reviewer_email: reviewer_email ?? null,
       rating,
       content: content ?? null,
+      ip_address: ip,
       status: "pending",
     });
 

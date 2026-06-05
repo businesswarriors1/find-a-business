@@ -8,11 +8,12 @@ import {
   MapPin,
   Star,
   Building2,
-  MessageSquare,
   ExternalLink,
 } from "lucide-react";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { getBusinessBySlug, getBusinesses, getBusinessReviews, getReviewStats } from "@/lib/supabase/server";
+import { ReviewForm } from "@/components/review-form";
+import { jsonLd } from "@/lib/utils";
 import type { Metadata } from "next";
 
 interface Props {
@@ -27,6 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${business.name} — ${business.suburb}, ${business.state} | ${SITE_NAME}`,
     description: business.description?.slice(0, 160) ?? `${business.name} in ${business.suburb}, ${business.state}. Contact details, reviews, and more.`,
+    alternates: { canonical: `${SITE_URL}/business/${slug}` },
     openGraph: {
       title: business.name,
       description: business.description?.slice(0, 160) ?? "",
@@ -59,6 +61,9 @@ export default async function BusinessPage({ params }: Props) {
     ? business.category_slug.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
     : "";
 
+  const mapsKey = process.env.GOOGLE_MAPS_API_KEY;
+  const stateSlug = business.state?.toLowerCase() ?? "";
+
   return (
     <div>
       {/* Breadcrumb */}
@@ -66,11 +71,19 @@ export default async function BusinessPage({ params }: Props) {
         <nav className="flex items-center gap-1.5 text-sm text-mid flex-wrap">
           <Link href="/" className="hover:text-dark transition-colors">Home</Link>
           <ChevronRight className="w-4 h-4" />
-          <Link href={`/state/${business.state?.toLowerCase()}`} className="hover:text-dark transition-colors">
+          <Link href={`/state/${stateSlug}`} className="hover:text-dark transition-colors">
             {business.state}
           </Link>
+          {business.category_slug && (
+            <>
+              <ChevronRight className="w-4 h-4" />
+              <Link href={`/category/${business.category_slug}`} className="hover:text-dark transition-colors">
+                {categoryName}
+              </Link>
+            </>
+          )}
           <ChevronRight className="w-4 h-4" />
-          <span className="text-dark font-medium">{business.suburb}</span>
+          <span className="text-dark font-medium">{business.name}</span>
         </nav>
       </div>
 
@@ -150,17 +163,37 @@ export default async function BusinessPage({ params }: Props) {
               </div>
             )}
 
-            {/* Map placeholder */}
+            {/* Location */}
             {business.address && (
               <div className="bg-white border border-border rounded-lg p-6">
                 <h2 className="text-xl font-bold font-heading text-dark mb-3">Location</h2>
-                <div className="aspect-video bg-light-bg rounded-lg flex items-center justify-center border border-border">
-                  <div className="text-center text-mid">
-                    <MapPin className="w-8 h-8 mx-auto mb-2" />
-                    <p className="text-sm font-medium">{business.address}</p>
-                    <p className="text-sm">{business.suburb}, {business.state} {business.postcode}</p>
-                  </div>
-                </div>
+                {mapsKey ? (
+                  <iframe
+                    title={`Map of ${business.name}`}
+                    className="w-full aspect-video rounded-lg border border-border"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://www.google.com/maps/embed/v1/place?key=${mapsKey}&q=${encodeURIComponent(
+                      `${business.address}, ${business.suburb} ${business.state} ${business.postcode}`,
+                    )}`}
+                  />
+                ) : (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                      `${business.address}, ${business.suburb} ${business.state} ${business.postcode}`,
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block aspect-video bg-light-bg rounded-lg flex items-center justify-center border border-border hover:border-primary transition-colors"
+                  >
+                    <div className="text-center text-mid">
+                      <MapPin className="w-8 h-8 mx-auto mb-2" />
+                      <p className="text-sm font-medium">{business.address}</p>
+                      <p className="text-sm">{business.suburb}, {business.state} {business.postcode}</p>
+                      <p className="text-xs text-primary mt-2">View on Google Maps →</p>
+                    </div>
+                  </a>
+                )}
               </div>
             )}
 
@@ -201,41 +234,7 @@ export default async function BusinessPage({ params }: Props) {
               )}
 
               {/* Leave a review form */}
-              <div className="mt-6 pt-4 border-t border-border">
-                <h3 className="font-semibold text-dark mb-3 font-heading">Leave a Review</h3>
-                <form className="space-y-3" action="/api/reviews" method="POST">
-                  <input type="hidden" name="business_id" value={business.id} />
-                  <input
-                    type="text"
-                    name="reviewer_name"
-                    placeholder="Your name"
-                    className="w-full border border-border rounded-md px-4 py-2.5 text-sm min-h-[44px]"
-                    required
-                  />
-                  <div className="flex items-center gap-1">
-                    <span className="text-sm text-mid mr-2">Rating:</span>
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <label key={n} className="cursor-pointer">
-                        <input type="radio" name="rating" value={n} className="sr-only peer" />
-                        <Star className="w-5 h-5 text-gray-200 peer-checked:text-yellow-400 peer-checked:fill-yellow-400" />
-                      </label>
-                    ))}
-                  </div>
-                  <textarea
-                    name="content"
-                    placeholder="Write your review..."
-                    rows={3}
-                    className="w-full border border-border rounded-md px-4 py-2.5 text-sm min-h-[80px]"
-                    required
-                  />
-                  <button
-                    type="submit"
-                    className="inline-flex items-center gap-2 bg-cta text-white font-semibold rounded-lg px-6 py-2.5 hover:opacity-90 transition-opacity"
-                  >
-                    <MessageSquare className="w-4 h-4" /> Submit Review
-                  </button>
-                </form>
-              </div>
+              <ReviewForm businessId={business.id} />
             </div>
           </div>
 
@@ -299,7 +298,7 @@ export default async function BusinessPage({ params }: Props) {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
+            __html: jsonLd({
               "@context": "https://schema.org",
               "@type": "LocalBusiness",
               name: business.name,
@@ -318,6 +317,30 @@ export default async function BusinessPage({ params }: Props) {
                 ratingValue: stats.average,
                 reviewCount: stats.count,
               } : undefined,
+            }),
+          }}
+        />
+
+        {/* JSON-LD: BreadcrumbList */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: jsonLd({
+              "@context": "https://schema.org",
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+                { "@type": "ListItem", position: 2, name: business.state, item: `${SITE_URL}/state/${stateSlug}` },
+                ...(business.category_slug
+                  ? [{ "@type": "ListItem", position: 3, name: categoryName, item: `${SITE_URL}/category/${business.category_slug}` }]
+                  : []),
+                {
+                  "@type": "ListItem",
+                  position: business.category_slug ? 4 : 3,
+                  name: business.name,
+                  item: `${SITE_URL}/business/${slug}`,
+                },
+              ],
             }),
           }}
         />

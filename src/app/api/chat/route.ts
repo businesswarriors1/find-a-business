@@ -75,8 +75,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const systemMessage = { role: "system", content: CLAUDE_SYSTEM_PROMPT };
-    const apiMessages = [systemMessage, ...messages.map((m) => ({ role: m.role, content: m.content }))];
+    // Anthropic requires `system` as a top-level parameter — NOT a message with
+    // role "system". Only "user"/"assistant" roles are valid in `messages`.
+    const apiMessages = messages
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .map((m) => ({ role: m.role, content: m.content }));
+
+    // Model is overridable via env so it can be upgraded without a code change.
+    const model = process.env.CHAT_MODEL ?? "claude-3-5-haiku-latest";
 
     const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -86,8 +92,9 @@ export async function POST(request: NextRequest) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-3-haiku-20240307",
+        model,
         max_tokens: 1024,
+        system: CLAUDE_SYSTEM_PROMPT,
         messages: apiMessages,
       }),
     });
@@ -121,6 +128,8 @@ export async function POST(request: NextRequest) {
             description: submission.description ?? null,
             contact_name: submission.contact_name ?? null,
             contact_email: submission.contact_email ?? null,
+            chat_transcript: JSON.stringify(messages),
+            ip_address: ip,
             status: "pending",
             source: "chat",
           });

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { getBrowserSupabase } from "@/lib/supabase-browser";
+import { createClient } from "@/lib/supabase/client";
 import { ListingRequest } from "@/types";
 import { cn } from "@/lib/utils";
 import {
@@ -28,7 +28,7 @@ export default function AdminRequestsPage() {
   const [editModal, setEditModal] = useState<{ open: boolean; request: ListingRequest | null }>({ open: false, request: null });
 
   const fetchRequests = useCallback(async () => {
-    const supabase = getBrowserSupabase();
+    const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       router.replace("/admin/login");
@@ -58,56 +58,22 @@ export default function AdminRequestsPage() {
 
   async function approveRequest(req: ListingRequest) {
     setActionLoading(req.id);
-    const supabase = getBrowserSupabase();
-
-    // Generate slug
-    const slug = req.business_name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
-
-    // Create business record
-    const { data: business, error: insertErr } = await supabase
-      .from("businesses")
-      .insert({
-        name: req.business_name,
-        slug,
-        category: req.category,
-        suburb: req.suburb,
-        state: req.state,
-        phone: req.phone,
-        website: req.website,
-        description: req.description,
-        contact_name: req.contact_name,
-        contact_email: req.contact_email,
-        status: "active",
-        claimed: false,
-      })
-      .select("id")
-      .single();
-
-    if (insertErr) {
-      console.error(insertErr);
-      alert("Failed to create business: " + insertErr.message);
-      setActionLoading(null);
-      return;
-    }
-
-    // Update listing request
-    await supabase
-      .from("listing_requests")
-      .update({ status: "approved", business_id: business.id })
-      .eq("id", req.id);
-
-    // Send approval email via API
+    // The server route (service role, admin-gated) creates the business with the
+    // correct schema columns, resolves category/suburb/state, updates the
+    // request, and emails the submitter.
     try {
-      await fetch("/api/admin/approve", {
+      const res = await fetch("/api/admin/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestId: req.id, businessId: business.id, slug }),
+        body: JSON.stringify({ requestId: req.id }),
       });
+      const data = await res.json();
+      if (!res.ok) {
+        alert("Failed to approve: " + (data.error ?? "Unknown error"));
+      }
     } catch (e) {
-      console.error("Email API error:", e);
+      console.error("Approve API error:", e);
+      alert("Network error while approving. Please try again.");
     }
 
     setActionLoading(null);
@@ -117,22 +83,19 @@ export default function AdminRequestsPage() {
   async function rejectRequest() {
     const { requestId, reason } = rejectionModal;
     setActionLoading(requestId);
-    const supabase = getBrowserSupabase();
-
-    await supabase
-      .from("listing_requests")
-      .update({ status: "rejected", rejection_reason: reason })
-      .eq("id", requestId);
-
-    // Send rejection email via API
     try {
-      await fetch("/api/admin/reject", {
+      const res = await fetch("/api/admin/reject", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ requestId, reason }),
       });
+      const data = await res.json();
+      if (!res.ok) {
+        alert("Failed to reject: " + (data.error ?? "Unknown error"));
+      }
     } catch (e) {
-      console.error("Email API error:", e);
+      console.error("Reject API error:", e);
+      alert("Network error while rejecting. Please try again.");
     }
 
     setRejectionModal({ open: false, requestId: "", reason: "" });
@@ -355,7 +318,7 @@ function EditRequestForm({
 
   async function handleSave() {
     setSaving(true);
-    const supabase = getBrowserSupabase();
+    const supabase = createClient();
     await supabase
       .from("listing_requests")
       .update(form)

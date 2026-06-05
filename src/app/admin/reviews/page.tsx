@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { getBrowserSupabase } from "@/lib/supabase-browser";
+import { createClient } from "@/lib/supabase/client";
 import { Review } from "@/types";
 import { cn } from "@/lib/utils";
 import {
@@ -24,7 +24,7 @@ export default function AdminReviewsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const fetchReviews = useCallback(async () => {
-    const supabase = getBrowserSupabase();
+    const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       router.replace("/admin/login");
@@ -51,7 +51,7 @@ export default function AdminReviewsPage() {
 
   async function updateReviewStatus(id: string, status: "approved" | "rejected") {
     setActionLoading(id);
-    const supabase = getBrowserSupabase();
+    const supabase = createClient();
     await supabase.from("reviews").update({ status }).eq("id", id);
     setActionLoading(null);
     fetchReviews();

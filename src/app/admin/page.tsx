@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getBrowserSupabase } from "@/lib/supabase-browser";
+import { createClient } from "@/lib/supabase/client";
 import { AdminStats } from "@/types";
 import { cn } from "@/lib/utils";
 import {
@@ -27,7 +27,7 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const supabase = getBrowserSupabase();
+      const supabase = createClient();
       if (!supabase) {
         setError("Supabase not configured");
         setLoading(false);

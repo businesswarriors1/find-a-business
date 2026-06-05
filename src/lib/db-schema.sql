@@ -212,6 +212,32 @@ CREATE POLICY "Admin manage leads" ON leads
 CREATE POLICY "Admin manage email sequence log" ON email_sequence_log
   FOR ALL USING (auth.role() = 'service_role');
 
+-- ------------------------------------------------------------------
+-- ADMIN (authenticated) ACCESS
+-- V1 has a single admin account, so any authenticated user IS the admin.
+-- These policies let the logged-in admin read/moderate via the browser
+-- (anon key + session) on the admin dashboard. Privileged writes that must
+-- never depend on the client (creating businesses on approval) still go
+-- through server routes using the service role.
+-- NOTE: revisit before introducing consumer accounts in V2.
+-- ------------------------------------------------------------------
+
+-- Admin can read every business regardless of status (dashboard/management)
+CREATE POLICY "Authenticated read all businesses" ON businesses
+  FOR SELECT TO authenticated USING (true);
+
+-- Admin can read + moderate all reviews
+CREATE POLICY "Authenticated read all reviews" ON reviews
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated update reviews" ON reviews
+  FOR UPDATE TO authenticated USING (true);
+
+-- Admin can read + edit listing requests
+CREATE POLICY "Authenticated read listing requests" ON listing_requests
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated update listing requests" ON listing_requests
+  FOR UPDATE TO authenticated USING (true);
+
 -- --- states (public read) ---
 CREATE POLICY "Public read states" ON states
   FOR SELECT USING (true);

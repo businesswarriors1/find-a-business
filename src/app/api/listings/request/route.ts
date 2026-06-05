@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { getAdminSupabase } from "@/lib/supabase";
+import { createClient as getAdminSupabase } from "@/lib/supabase/admin";
 import { sendNewListingAlert } from "@/lib/slack";
 
 // POST — direct listing request form submission (alternative to chat)

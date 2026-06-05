@@ -71,6 +71,54 @@ export async function getBusinesses(filters: {
   return { data: businesses, total: count ?? 0 };
 }
 
+export async function searchBusinesses(filters: {
+  q?: string;
+  location?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  const supabase = await createClient();
+  if (!supabase) return { data: [], total: 0 };
+
+  const page = filters.page ?? 1;
+  const pageSize = filters.pageSize ?? 20;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabase
+    .from("businesses")
+    .select("*, states!inner(abbreviation), suburbs!inner(name, postcode), categories!inner(name, slug)", { count: "exact" })
+    .eq("status", "active");
+
+  // Keyword: match business name OR description OR category name.
+  if (filters.q?.trim()) {
+    const q = filters.q.trim();
+    query = query.or(`name.ilike.%${q}%,description.ilike.%${q}%`);
+  }
+
+  // Location: match suburb name OR state abbreviation.
+  if (filters.location?.trim()) {
+    const loc = filters.location.trim();
+    query = query.or(`name.ilike.%${loc}%`, { foreignTable: "suburbs" });
+  }
+
+  query = query.order("is_featured", { ascending: false }).order("name", { ascending: true }).range(from, to);
+
+  const { data, count, error } = await query;
+  if (error || !data) return { data: [], total: 0 };
+
+  const businesses = data.map((row: any) => ({
+    id: row.id, name: row.name, slug: row.slug,
+    description: row.description ?? "", phone: row.phone ?? "", website: row.website ?? "",
+    category: row.categories?.name ?? "", category_slug: row.categories?.slug ?? "",
+    suburb: row.suburbs?.name ?? "", postcode: row.suburbs?.postcode ?? "",
+    state: row.states?.abbreviation ?? "", logo_url: row.logo_url ?? "",
+    is_claimed: row.is_claimed ?? false,
+  }));
+
+  return { data: businesses, total: count ?? 0 };
+}
+
 export async function getBusinessBySlug(slug: string) {
   const supabase = await createClient();
   if (!supabase) return null;
@@ -91,6 +139,24 @@ export async function getBusinessBySlug(slug: string) {
     is_claimed: data.is_claimed ?? false, is_featured: data.is_featured ?? false,
     created_at: data.created_at ?? "",
   };
+}
+
+export async function getAllBusinessSlugs(): Promise<{ slug: string; updated_at: string }[]> {
+  const supabase = await createClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("businesses")
+    .select("slug, updated_at")
+    .eq("status", "active")
+    .order("updated_at", { ascending: false })
+    .limit(50000);
+  if (error || !data) return [];
+
+  return data.map((row: any) => ({
+    slug: row.slug,
+    updated_at: row.updated_at ?? row.created_at ?? new Date(0).toISOString(),
+  }));
 }
 
 export async function getRecentBusinesses(limit: number = 6) {
